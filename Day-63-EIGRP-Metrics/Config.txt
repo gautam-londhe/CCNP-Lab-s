@@ -1,0 +1,109 @@
+R1#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+1   10.13.13.2              Gi0/1                    14 00:00:37   10   100  0  9
+0   10.12.12.2              Gi0/0                    14 00:01:15    4   100  0  11
+
+
+R1#show ip route eigrp 
+Gateway of last resort is not set
+
+      2.0.0.0/32 is subnetted, 1 subnets
+D        2.2.2.2 [90/2944000] via 10.12.12.2, 00:03:16, GigabitEthernet0/0
+      3.0.0.0/32 is subnetted, 1 subnets
+D        3.3.3.3 [90/409600] via 10.13.13.2, 00:03:16, GigabitEthernet0/1
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+D        10.23.23.0/30 
+           [90/2841600] via 10.13.13.2, 00:03:16, GigabitEthernet0/1
+
+R1#show ip eigrp topology
+EIGRP-IPv4 Topology Table for AS(10)/ID(1.1.1.1)
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+       r - reply Status, s - sia Status 
+
+P 10.13.13.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/1
+P 10.12.12.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/0
+P 10.23.23.0/30, 2 successors, FD is 3072
+        via 10.12.12.2 (3072/2816), GigabitEthernet0/0
+        via 10.13.13.2 (3072/2816), GigabitEthernet0/1
+P 2.2.2.2/32, 1 successors, FD is 130816
+        via 10.12.12.2 (130816/128256), GigabitEthernet0/0
+P 3.3.3.3/32, 1 successors, FD is 130816
+        via 10.13.13.2 (130816/128256), GigabitEthernet0/1
+P 1.1.1.1/32, 1 successors, FD is 128256
+        via Connected, Loopback0
+
+R1#debug eigrp packets hello 
+    (HELLO)
+EIGRP Packet debugging is on
+
+R2#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+1   10.23.23.2              Gi0/1                    14 00:04:23    8   100  0  10
+0   10.12.12.1              Gi0/0                    12 00:05:10    4   100  0  9
+
+R2#show ip route eigrp 
+Gateway of last resort is not set
+
+
+      1.0.0.0/32 is subnetted, 1 subnets
+D        1.1.1.1 [90/2944000] via 10.12.12.1, 00:04:32, GigabitEthernet0/0
+      3.0.0.0/32 is subnetted, 1 subnets
+D        3.3.3.3 [90/2944000] via 10.23.23.2, 00:03:52, GigabitEthernet0/1
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+D        10.13.13.0/30 
+           [90/2841600] via 10.23.23.2, 00:03:52, GigabitEthernet0/1
+           [90/2841600] via 10.12.12.1, 00:03:52, GigabitEthernet0/0
+
+
+R3#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+1   10.23.23.1              Gi0/1                    12 00:05:38    5   100  0  10
+0   10.13.13.1              Gi0/0                    14 00:05:47    1   100  0  10
+
+
+R3#show ip route eigrp 
+Gateway of last resort is not set
+
+       1.0.0.0/32 is subnetted, 1 subnets
+D        1.1.1.1 [90/409600] via 10.13.13.1, 00:04:53, GigabitEthernet0/0
+      2.0.0.0/32 is subnetted, 1 subnets
+D        2.2.2.2 [90/2944000] via 10.23.23.1, 00:04:53, GigabitEthernet0/1
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+D        10.12.12.0/30 
+           [90/2841600] via 10.13.13.1, 00:04:53, GigabitEthernet0/0
+
+
+R1#ping 10.23.23.2
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 10.23.23.2, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/3/4 ms
+
+R1#show ip eigrp topology all-links 
+EIGRP-IPv4 Topology Table for AS(10)/ID(1.1.1.1)
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+       r - reply Status, s - sia Status 
+
+P 10.13.13.0/30, 1 successors, FD is 281600, serno 24
+        via Connected, GigabitEthernet0/1
+P 10.12.12.0/30, 1 successors, FD is 2816000, serno 12
+        via Connected, GigabitEthernet0/0
+P 10.23.23.0/30, 1 successors, FD is 2816256, serno 22
+        via 10.13.13.2 (2841600/2816000), GigabitEthernet0/1
+        via 10.12.12.2 (3072000/2816000), GigabitEthernet0/0
+P 2.2.2.2/32, 1 successors, FD is 2688512, serno 19
+        via 10.12.12.2 (2944000/128256), GigabitEthernet0/0
+        via 10.13.13.2 (2969600/2944000), GigabitEthernet0/1
+P 3.3.3.3/32, 1 successors, FD is 130816, serno 23
+        via 10.13.13.2 (409600/128256), GigabitEthernet0/1
+        via 10.12.12.2 (3200000/2944000), GigabitEthernet0/0
+P 1.1.1.1/32, 1 successors, FD is 128256, serno 3
+        via Connected, Loopback0
