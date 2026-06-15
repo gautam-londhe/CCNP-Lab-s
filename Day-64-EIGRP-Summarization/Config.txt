@@ -1,0 +1,67 @@
+R1
+
+!         
+interface GigabitEthernet0/0
+ ip address 10.1.12.1 255.255.255.252
+ duplex auto
+ speed auto
+ media-type rj45
+!       
+
+!         
+router eigrp 10
+ network 10.1.12.0 0.0.0.3
+!   
+
+R2
+
+!         
+interface Loopback0
+ ip address 192.168.1.1 255.255.255.0
+!         
+interface Loopback1
+ ip address 192.168.2.1 255.255.255.0
+!         
+interface Loopback2
+ ip address 192.168.3.1 255.255.255.0
+!         
+interface Loopback3
+ ip address 192.168.4.1 255.255.255.0
+!         
+interface GigabitEthernet0/0
+ ip address 10.1.12.2 255.255.255.252
+ ip summary-address eigrp 10 192.168.0.0 255.255.248.0
+ duplex auto
+ speed auto
+ media-type rj45
+!  
+
+!         
+router eigrp 10
+ network 10.1.12.0 0.0.0.3
+ network 192.168.1.0
+ network 192.168.2.0
+ network 192.168.3.0
+ network 192.168.4.0
+!     
+
+R1#ping 192.168.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 4/5/10 ms
+R1#ping 192.168.2.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.2.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/4/6 ms
+R1#ping 192.168.3.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.3.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/3/6 ms
+R1#ping 192.168.4.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.4.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/5/10 ms
