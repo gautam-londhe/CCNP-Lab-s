@@ -1,0 +1,82 @@
+R1 Configuration
+conf t
+
+hostname R1
+
+interface g0/0
+ ip address 10.1.12.1 255.255.255.252
+ no shut
+
+interface lo0
+ ip address 1.1.1.1 255.255.255.255
+
+router eigrp 100
+
+network 10.1.12.0 0.0.0.3
+network 1.1.1.1 0.0.0.0
+
+no auto-summary
+
+end
+wr
+R2 Configuration
+conf t
+
+hostname R2
+
+interface g0/0
+ ip address 10.1.12.2 255.255.255.252
+ no shut
+
+interface lo0
+ ip address 2.2.2.2 255.255.255.255
+
+interface lo1
+ ip address 192.168.10.1 255.255.255.0
+
+interface lo2
+ ip address 192.168.20.1 255.255.255.0
+
+router eigrp 100
+
+network 10.1.12.0 0.0.0.3
+network 2.2.2.2 0.0.0.0
+network 192.168.10.0 0.0.0.255
+network 192.168.20.0 0.0.0.255
+
+no auto-summary
+
+eigrp stub connected summary
+
+end
+wr
+
+R1#show ip eigrp neighbors detail 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+0   10.1.12.2               Gi0/0                    13 00:04:39    5   100  0  5
+   Version 23.0/2.0, Retrans: 0, Retries: 0, Prefixes: 3
+   Topology-ids from peer - 0 
+   Topologies advertised to peer:   base
+
+   Stub Peer Advertising (CONNECTED SUMMARY ) Routes
+   Suppressing queries
+Max Nbrs: 0, Current Nbrs: 0
+
+R1#ping 2.2.2.2
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 2.2.2.2, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/2/3 ms
+R1#ping 192.168.10.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.10.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/3/4 ms
+R1#ping 192.168.20.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.20.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/3/3 ms
+
