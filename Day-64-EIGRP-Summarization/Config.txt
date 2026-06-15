@@ -36,6 +36,11 @@ interface GigabitEthernet0/0
  media-type rj45
 !  
 
+R1#show ip route eigrp 
+Gateway of last resort is not set
+
+D     192.168.0.0/21 [90/130816] via 10.1.12.2, 00:07:29, GigabitEthernet0/0
+
 !         
 router eigrp 10
  network 10.1.12.0 0.0.0.3
