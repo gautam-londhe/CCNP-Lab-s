@@ -1,0 +1,220 @@
+R1
+enable
+conf t
+
+hostname R1
+
+interface g0/0
+ ip address 192.168.1.1 255.255.255.0
+ no shut
+
+interface g0/1
+ ip address 10.0.12.1 255.255.255.252
+ no shut
+
+interface g0/2
+ ip address 10.0.13.1 255.255.255.252
+ no shut
+
+router eigrp 100
+
+network 192.168.1.0 0.0.0.255
+network 10.0.12.0 0.0.0.3
+network 10.0.13.0 0.0.0.3
+
+no auto-summary
+
+end
+wr
+R2
+enable
+conf t
+
+hostname R2
+
+interface g0/0
+ ip address 192.168.2.1 255.255.255.0
+ no shut
+
+interface g0/1
+ ip address 10.0.12.2 255.255.255.252
+ no shut
+
+router eigrp 10
+
+network 192.168.2.0 0.0.0.255
+network 10.0.12.0 0.0.0.3
+
+no auto-summary
+
+end
+wr
+R3
+enable
+conf t
+
+hostname R3
+
+interface g0/0
+ ip address 192.168.3.1 255.255.255.0
+ no shut
+
+interface g0/1
+ ip address 10.0.13.2 255.255.255.252
+ no shut
+
+router eigrp 10
+
+network 192.168.3.0 0.0.0.255
+network 10.0.13.0 0.0.0.3
+
+no auto-summary
+
+end
+wr
+
+R1#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+0   10.0.12.2               Gi0/0                    13 00:10:54   12   100  0  10
+
+R2#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+1   10.0.23.2               Gi0/1                    13 00:09:24   28   168  0  4
+0   10.0.12.1               Gi0/0                    12 00:11:23   16   100  0  5
+
+
+R3#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(10)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+0   10.0.23.1               Gi0/1                    12 00:09:45 1271  5000  0  11
+
+R1#show ip route eigrp 
+
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+D        10.0.23.0/30 [90/3072] via 10.0.12.2, 00:15:20, GigabitEthernet0/0
+D     192.168.2.0/24 [90/130816] via 10.0.12.2, 00:15:09, GigabitEthernet0/0
+D     192.168.3.0/24 [90/131072] via 10.0.12.2, 00:13:09, GigabitEthernet0/0
+
+R2#show ip route eigrp 
+
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+D        10.0.13.0/30 [90/3072] via 10.0.23.2, 00:13:46, GigabitEthernet0/1
+                      [90/3072] via 10.0.12.1, 00:13:46, GigabitEthernet0/0
+D     192.168.1.0/24 [90/130816] via 10.0.12.1, 00:15:50, GigabitEthernet0/0
+D     192.168.3.0/24 [90/130816] via 10.0.23.2, 00:13:27, GigabitEthernet0/1
+
+R3#show ip route eigrp
+
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+D        10.0.12.0/30 [90/3072] via 10.0.23.1, 00:14:05, GigabitEthernet0/1
+D     192.168.1.0/24 [90/131072] via 10.0.23.1, 00:14:05, GigabitEthernet0/1
+D     192.168.2.0/24 [90/130816] via 10.0.23.1, 00:14:05, GigabitEthernet0/1
+
+R1#show ip eigrp topology
+EIGRP-IPv4 Topology Table for AS(10)/ID(192.168.1.1)
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+       r - reply Status, s - sia Status 
+
+P 192.168.3.0/24, 1 successors, FD is 131072
+        via 10.0.12.2 (131072/130816), GigabitEthernet0/0
+P 192.168.2.0/24, 1 successors, FD is 130816
+        via 10.0.12.2 (130816/128256), GigabitEthernet0/0
+P 192.168.1.0/24, 1 successors, FD is 128256
+        via Connected, Loopback0
+P 10.0.13.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/1
+P 10.0.23.0/30, 1 successors, FD is 3072
+        via 10.0.12.2 (3072/2816), GigabitEthernet0/0
+P 10.0.12.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/0
+
+R2#show ip eigrp topology
+EIGRP-IPv4 Topology Table for AS(10)/ID(192.168.2.1)
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+       r - reply Status, s - sia Status 
+
+P 192.168.3.0/24, 1 successors, FD is 130816
+        via 10.0.23.2 (130816/128256), GigabitEthernet0/1
+P 192.168.2.0/24, 1 successors, FD is 128256
+        via Connected, Loopback0
+P 192.168.1.0/24, 1 successors, FD is 130816
+        via 10.0.12.1 (130816/128256), GigabitEthernet0/0
+P 10.0.13.0/30, 2 successors, FD is 3072
+        via 10.0.12.1 (3072/2816), GigabitEthernet0/0
+        via 10.0.23.2 (3072/2816), GigabitEthernet0/1
+P 10.0.23.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/1
+P 10.0.12.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/0
+
+R3#show ip eigrp topology
+EIGRP-IPv4 Topology Table for AS(10)/ID(192.168.3.1)
+Codes: P - Passive, A - Active, U - Update, Q - Query, R - Reply,
+       r - reply Status, s - sia Status 
+
+P 192.168.3.0/24, 1 successors, FD is 128256
+        via Connected, Loopback0
+P 192.168.2.0/24, 1 successors, FD is 130816
+        via 10.0.23.1 (130816/128256), GigabitEthernet0/1
+P 192.168.1.0/24, 1 successors, FD is 131072
+        via 10.0.23.1 (131072/130816), GigabitEthernet0/1
+P 10.0.13.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/0
+P 10.0.23.0/30, 1 successors, FD is 2816
+        via Connected, GigabitEthernet0/1
+P 10.0.12.0/30, 1 successors, FD is 3072
+        via 10.0.23.1 (3072/2816), GigabitEthernet0/1
+
+R1#show ip protocols 
+*** IP Routing is NSF aware ***
+
+Routing Protocol is "application"
+  Sending updates every 0 seconds
+  Invalid after 0 seconds, hold down 0, flushed after 0
+  Outgoing update filter list for all interfaces is not set
+  Incoming update filter list for all interfaces is not set
+  Maximum path: 32
+  Routing for Networks:
+  Routing Information Sources:
+    Gateway         Distance      Last Update
+  Distance: (default is 4)
+
+Routing Protocol is "eigrp 10"
+  Outgoing update filter list for all interfaces is not set
+  Incoming update filter list for all interfaces is not set
+  Default networks flagged in outgoing updates
+  Default networks accepted from incoming updates
+  EIGRP-IPv4 Protocol for AS(10)
+    Metric weight K1=1, K2=0, K3=1, K4=0, K5=0
+    Soft SIA disabled
+    NSF-aware route hold timer is 240
+    Router-ID: 192.168.1.1
+    Topology : 0 (base) 
+      Active Timer: 3 min
+      Distance: internal 90 external 170
+      Maximum path: 4
+      Maximum hopcount 100
+      Maximum metric variance 1
+          
+  Automatic Summarization: disabled
+  Maximum path: 4
+  Routing for Networks:
+    10.0.12.0/30
+    10.0.13.0/30
+    192.168.1.0/30
+    192.168.1.0
+  Routing Information Sources:
+    Gateway         Distance      Last Update
+    10.0.12.2             90      00:17:21
+  Distance: internal 90 external 170
