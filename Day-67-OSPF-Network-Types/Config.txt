@@ -1,0 +1,131 @@
+R1
+conf t
+
+hostname R1
+
+interface g0/0
+ ip address 10.1.12.1 255.255.255.0
+ no shut
+
+interface lo0
+ ip address 1.1.1.1 255.255.255.255
+
+router ospf 1
+ router-id 1.1.1.1
+
+network 10.1.12.0 0.0.0.255 area 0
+network 1.1.1.1 0.0.0.0 area 0
+
+end
+wr
+R2
+conf t
+
+hostname R2
+
+interface g0/0
+ ip address 10.1.12.2 255.255.255.0
+ no shut
+
+interface g0/1
+ ip address 10.1.23.2 255.255.255.0
+ no shut
+
+interface lo0
+ ip address 2.2.2.2 255.255.255.255
+
+router ospf 1
+ router-id 2.2.2.2
+
+network 10.1.12.0 0.0.0.255 area 0
+network 10.1.23.0 0.0.0.255 area 0
+network 2.2.2.2 0.0.0.0 area 0
+
+end
+wr
+R3
+conf t
+
+hostname R3
+
+interface g0/0
+ ip address 10.1.23.3 255.255.255.0
+ no shut
+
+interface lo0
+ ip address 3.3.3.3 255.255.255.255
+
+router ospf 1
+ router-id 3.3.3.3
+
+network 10.1.23.0 0.0.0.255 area 0
+network 3.3.3.3 0.0.0.0 area 0
+
+end
+wr
+
+R1#sh ip ospf interface g0/0  
+GigabitEthernet0/0 is up, line protocol is up 
+  Internet Address 10.1.12.1/24, Area 0, Attached via Network Statement
+  Process ID 1, Router ID 1.1.1.1, Network Type NON_BROADCAST, Cost: 1
+  Topology-MTID    Cost    Disabled    Shutdown      Topology Name
+        0           1         no          no            Base
+  Transmit Delay is 1 sec, State DR, Priority 1
+  Designated Router (ID) 1.1.1.1, Interface address 10.1.12.1
+  No backup designated router on this network
+  Timer intervals configured, Hello 30, Dead 120, Wait 120, Retransmit 5
+    oob-resync timeout 120
+    Hello due in 00:00:04
+  Supports Link-local Signaling (LLS)
+  Cisco NSF helper support enabled
+  IETF NSF helper support enabled
+  Index 1/1/1, flood queue length 0
+  Next 0x0(0)/0x0(0)/0x0(0)
+  Last flood scan length is 2, maximum is 2
+  Last flood scan time is 1 msec, maximum is 1 msec
+  Neighbor Count is 0, Adjacent neighbor count is 0 
+  Suppress hello for 0 neighbor(s)
+
+R1#show ip ospf neighbor 
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+N/A               0   ATTEMPT/DROTHER    -        10.1.12.2       GigabitEthernet0/0
+
+R1#show running-config | section ospf
+ ip ospf network non-broadcast
+router ospf 1
+ router-id 1.1.1.1
+ network 1.1.1.1 0.0.0.0 area 0
+ network 10.1.12.0 0.0.0.255 area 0
+ neighbor 10.1.12.2
+
+
+R1#show running-config | section ospf
+ ip ospf network point-to-point
+router ospf 1
+ router-id 1.1.1.1
+ network 1.1.1.1 0.0.0.0 area 0
+ network 10.1.12.0 0.0.0.255 area 0
+ neighbor 10.1.12.2
+
+R1#show ip ospf interface g0/0
+GigabitEthernet0/0 is up, line protocol is up 
+  Internet Address 10.1.12.1/24, Area 0, Attached via Network Statement
+  Process ID 1, Router ID 1.1.1.1, Network Type POINT_TO_POINT, Cost: 1
+  Topology-MTID    Cost    Disabled    Shutdown      Topology Name
+        0           1         no          no            Base
+  Transmit Delay is 1 sec, State POINT_TO_POINT
+  Timer intervals configured, Hello 10, Dead 40, Wait 40, Retransmit 5
+    oob-resync timeout 40
+    Hello due in 00:00:09
+  Supports Link-local Signaling (LLS)
+  Cisco NSF helper support enabled
+  IETF NSF helper support enabled
+  Index 1/1/1, flood queue length 0
+  Next 0x0(0)/0x0(0)/0x0(0)
+  Last flood scan length is 1, maximum is 2
+  Last flood scan time is 0 msec, maximum is 1 msec
+  Neighbor Count is 1, Adjacent neighbor count is 1 
+    Adjacent with neighbor 2.2.2.2
+  Suppress hello for 0 neighbor(s)
+
