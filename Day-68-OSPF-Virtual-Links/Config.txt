@@ -1,0 +1,219 @@
+R1
+conf t
+
+hostname R1
+
+interface g0/0
+ ip address 10.12.12.1 255.255.255.252
+ no shut
+
+interface lo0
+ ip address 1.1.1.1 255.255.255.255
+
+router ospf 1
+
+ router-id 1.1.1.1
+
+ network 10.12.12.0 0.0.0.3 area 0
+ network 1.1.1.1 0.0.0.0 area 0
+
+end
+wr
+R2
+conf t
+
+hostname R2
+
+interface g0/0
+ ip address 10.12.12.2 255.255.255.252
+ no shut
+
+interface g0/1
+ ip address 10.23.23.1 255.255.255.252
+ no shut
+
+router ospf 1
+
+ router-id 2.2.2.2
+
+ network 10.12.12.0 0.0.0.3 area 0
+ network 10.23.23.0 0.0.0.3 area 10
+
+end
+wr
+R3
+conf t
+
+hostname R3
+
+interface g0/0
+ ip address 10.23.23.2 255.255.255.252
+ no shut
+
+interface g0/1
+ ip address 10.34.34.1 255.255.255.252
+ no shut
+
+router ospf 1
+
+ router-id 3.3.3.3
+
+ network 10.23.23.0 0.0.0.3 area 10
+ network 10.34.34.0 0.0.0.3 area 20
+
+end
+wr
+R4
+conf t
+
+hostname R4
+
+interface g0/0
+ ip address 10.34.34.2 255.255.255.252
+ no shut
+
+interface lo0
+ ip address 4.4.4.4 255.255.255.255
+
+router ospf 1
+
+ router-id 4.4.4.4
+
+ network 10.34.34.0 0.0.0.3 area 20
+ network 4.4.4.4 0.0.0.0 area 20
+
+end
+wr
+
+On R2
+
+Use R3 Router-ID:
+
+router ospf 1
+
+area 10 virtual-link 3.3.3.3
+On R3
+
+Use R2 Router-ID:
+
+router ospf 1
+
+area 10 virtual-link 2.2.2.2
+
+----------------------------------------------------------------------------------------------------
+R3(config-router)#do sh ip ospf virtual
+Virtual Link OSPF_VL0 to router 2.2.2.2 is up
+  Run as demand circuit
+  DoNotAge LSA allowed.
+  Transit area 1, via interface GigabitEthernet0/1
+ Topology-MTID    Cost    Disabled     Shutdown      Topology Name
+        0           1         no          no            Base
+  Transmit Delay is 1 sec, State POINT_TO_POINT,
+  Timer intervals configured, Hello 10, Dead 40, Wait 40, Retransmit 5
+    Hello due in 00:00:09
+    Adjacency State FULL (Hello suppressed)
+    Index 1/1/3, retransmission queue length 0, number of retransmission 0
+    First 0x0(0)/0x0(0)/0x0(0) Next 0x0(0)/0x0(0)/0x0(0)
+    Last retransmission scan length is 0, maximum is 0
+    Last retransmission scan time is 0 msec, maximum is 0 msec
+
+----------------------------------------------------------------------------------------------------
+R3(config-router)#do sh ip ospf neighbor
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+2.2.2.2           0   FULL/  -           -        10.23.23.1      OSPF_VL0
+2.2.2.2           1   FULL/DR         00:00:30    10.23.23.1      GigabitEthernet0/1
+4.4.4.4           1   FULL/BDR        00:00:37    10.34.34.2      GigabitEthernet0/2
+
+
+R3(config-router)#do sh ip ospf database
+
+            OSPF Router with ID (3.3.3.3) (Process ID 1)
+
+                Router Link States (Area 0)
+
+Link ID         ADV Router      Age         Seq#       Checksum Link count
+1.1.1.1         1.1.1.1         310   (DNA) 0x80000003 0x006280 1
+2.2.2.2         2.2.2.2         1     (DNA) 0x80000006 0x002D51 2
+3.3.3.3         3.3.3.3         123         0x80000002 0x00369E 1
+
+                Net Link States (Area 0)
+
+Link ID         ADV Router      Age         Seq#       Checksum
+10.12.12.1      1.1.1.1         310   (DNA) 0x80000001 0x0054B5
+
+                Summary Net Link States (Area 0)
+
+Link ID         ADV Router      Age         Seq#       Checksum
+4.4.4.4         3.3.3.3         129         0x80000001 0x008A94
+10.23.23.0      2.2.2.2         303   (DNA) 0x80000001 0x00AF4F
+10.23.23.0      3.3.3.3         129         0x80000001 0x009169
+10.34.34.0      3.3.3.3         129         0x80000001 0x009351
+
+                Router Link States (Area 1)
+          
+Link ID         ADV Router      Age         Seq#       Checksum Link count
+2.2.2.2         2.2.2.2         124         0x80000004 0x00F2B5 1
+3.3.3.3         3.3.3.3         123         0x80000005 0x00B2EB 1
+          
+                Net Link States (Area 1)
+          
+Link ID         ADV Router      Age         Seq#       Checksum
+10.23.23.1      2.2.2.2         340         0x80000001 0x008C5B
+          
+                Summary Net Link States (Area 1)
+          
+Link ID         ADV Router      Age         Seq#       Checksum
+4.4.4.4         3.3.3.3         129         0x80000001 0x008A94
+10.12.12.0      2.2.2.2         427         0x80000001 0x00AD67
+10.34.34.0      3.3.3.3         129         0x80000001 0x009351
+          
+                Router Link States (Area 2)
+          
+Link ID         ADV Router      Age         Seq#       Checksum Link count
+3.3.3.3         3.3.3.3         129         0x80000004 0x006A0E 1
+4.4.4.4         4.4.4.4         190         0x80000004 0x00AEA0 2
+          
+                Net Link States (Area 2)
+          
+Link ID         ADV Router      Age         Seq#       Checksum
+10.34.34.1      3.3.3.3         212         0x80000001 0x00C401
+          
+                Summary Net Link States (Area 2)
+          
+Link ID         ADV Router      Age         Seq#       Checksum
+10.12.12.0      3.3.3.3         119         0x80000001 0x009976
+10.23.23.0      3.3.3.3         129         0x80000001 0x009169
+
+
+R3(config-router)#do sh ip route ospf
+Gateway of last resort is not set
+
+      4.0.0.0/32 is subnetted, 1 subnets
+O        4.4.4.4 [110/2] via 10.34.34.2, 00:02:46, GigabitEthernet0/2
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+O        10.12.12.0/30 [110/2] via 10.23.23.1, 00:02:36, GigabitEthernet0/1
+
+----------------------------------------------------------------------------------------------------
+Route Table on R1
+O IA 4.4.4.4/32
+
+Now reachable.
+
+R1#show ip route ospf
+Gateway of last resort is not set
+
+      4.0.0.0/32 is subnetted, 1 subnets
+O IA     4.4.4.4 [110/4] via 10.12.12.2, 00:03:27, GigabitEthernet0/0
+      10.0.0.0/8 is variably subnetted, 4 subnets, 2 masks
+O IA     10.23.23.0/30 [110/2] via 10.12.12.2, 00:08:39, GigabitEthernet0/0
+O IA     10.34.34.0/30 [110/3] via 10.12.12.2, 00:03:27, GigabitEthernet0/0
+
+----------------------------------------------------------------------------------------------------
+
+R4(config-router)#do sh ip route ospf
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 4 subnets, 2 masks
+O IA     10.12.12.0/30 [110/3] via 10.34.34.1, 00:05:29, GigabitEthernet0/2
+O IA     10.23.23.0/30 [110/2] via 10.34.34.1, 00:05:35, GigabitEthernet0/2
