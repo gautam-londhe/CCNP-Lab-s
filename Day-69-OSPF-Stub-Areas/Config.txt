@@ -1,0 +1,253 @@
+R1
+conf t
+
+hostname R1
+
+interface g0/0
+ ip address 10.12.12.1 255.255.255.252
+ no shut
+
+interface lo0
+ ip address 1.1.1.1 255.255.255.255
+
+router ospf 1
+
+ router-id 1.1.1.1
+
+ network 10.12.12.0 0.0.0.3 area 0
+ network 1.1.1.1 0.0.0.0 area 0
+
+end
+wr
+R2 (ABR)
+conf t
+
+hostname R2
+
+interface g0/0
+ ip address 10.12.12.2 255.255.255.252
+ no shut
+
+interface g0/1
+ ip address 10.23.23.1 255.255.255.252
+ no shut
+
+router ospf 1
+
+ router-id 2.2.2.2
+
+ network 10.12.12.0 0.0.0.3 area 0
+ network 10.23.23.0 0.0.0.3 area 10
+
+ area 10 stub
+
+end
+wr
+R3
+conf t
+
+hostname R3
+
+interface g0/0
+ ip address 10.23.23.2 255.255.255.252
+ no shut
+
+interface lo0
+ ip address 3.3.3.3 255.255.255.255
+
+router ospf 1
+
+ router-id 3.3.3.3
+
+ network 10.23.23.0 0.0.0.3 area 10
+ network 3.3.3.3 0.0.0.0 area 10
+
+ area 10 stub
+
+end
+wr
+
+----------------------------------------------------------------------------------------------------
+R1#show ip ospf neighbor 
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+2.2.2.2           1   FULL/BDR        00:00:37    10.12.12.2      GigabitEthernet0/0
+
+R1#show ip ospf database
+
+            OSPF Router with ID (1.1.1.1) (Process ID 1)
+
+                Router Link States (Area 0)
+
+Link ID         ADV Router      Age         Seq#       Checksum Link count
+1.1.1.1         1.1.1.1         443         0x80000004 0x004F7D 2
+2.2.2.2         2.2.2.2         429         0x80000004 0x0025B2 1
+
+                Net Link States (Area 0)
+
+Link ID         ADV Router      Age         Seq#       Checksum
+10.12.12.1      1.1.1.1         443         0x80000001 0x0054B5
+
+                Summary Net Link States (Area 0)
+
+Link ID         ADV Router      Age         Seq#       Checksum
+3.3.3.3         2.2.2.2         345         0x80000001 0x00D650
+10.23.23.0      2.2.2.2         429         0x80000001 0x00AF4F
+
+
+R1#show ip route ospf 
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+       a - application route
+       + - replicated route, % - next hop override, p - overrides from PfR
+
+Gateway of last resort is not set
+
+      3.0.0.0/32 is subnetted, 1 subnets
+O IA     3.3.3.3 [110/3] via 10.12.12.2, 00:06:17, GigabitEthernet0/0
+      10.0.0.0/8 is variably subnetted, 3 subnets, 2 masks
+O IA     10.23.23.0/30 [110/2] via 10.12.12.2, 00:07:36, GigabitEthernet0/0
+
+
+R1#show ip ospf
+ Routing Process "ospf 1" with ID 1.1.1.1
+ Start time: 00:06:09.700, Time elapsed: 00:09:27.628
+ Supports only single TOS(TOS0) routes
+ Supports opaque LSA
+ Supports Link-local Signaling (LLS)
+ Supports area transit capability
+ Supports NSSA (compatible with RFC 3101)
+ Supports Database Exchange Summary List Optimization (RFC 5243)
+ Event-log enabled, Maximum number of events: 1000, Mode: cyclic
+ Router is not originating router-LSAs with maximum metric
+ Initial SPF schedule delay 5000 msecs
+ Minimum hold time between two consecutive SPFs 10000 msecs
+ Maximum wait time between two consecutive SPFs 10000 msecs
+ Incremental-SPF disabled
+ Minimum LSA interval 5 secs
+ Minimum LSA arrival 1000 msecs
+ LSA group pacing timer 240 secs
+ Interface flood pacing timer 33 msecs
+ Retransmission pacing timer 66 msecs
+ EXCHANGE/LOADING adjacency limit: initial 300, process maximum 300
+ Number of external LSA 0. Checksum Sum 0x000000
+ Number of opaque AS LSA 0. Checksum Sum 0x000000
+ Number of DCbitless external and opaque AS LSA 0
+ Number of DoNotAge external and opaque AS LSA 0
+ Number of areas in this router is 1. 1 normal 0 stub 0 nssa
+ Number of areas transit capable is 0
+ External flood list length 0
+ IETF NSF helper support enabled
+ Cisco NSF helper support enabled
+ Reference bandwidth unit is 100 mbps
+    Area BACKBONE(0)
+        Number of interfaces in this area is 2 (1 loopback)
+        Area has no authentication
+        SPF algorithm last executed 00:08:04.657 ago
+        SPF algorithm executed 5 times
+        Area ranges are
+        Number of LSA 5. Checksum Sum 0x024F83
+        Number of opaque link LSA 0. Checksum Sum 0x000000
+        Number of DCbitless LSA 0
+        Number of indication LSA 0
+        Number of DoNotAge LSA 0
+        Flood list length 0
+
+
+
+----------------------------------------------------------------------------------------------------
+R3#show ip ospf neighbor 
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+2.2.2.2           1   FULL/DR         00:00:30    10.23.23.1      GigabitEthernet0/1
+R3#show ip ospf database
+
+            OSPF Router with ID (3.3.3.3) (Process ID 1)
+
+                Router Link States (Area 1)
+
+Link ID         ADV Router      Age         Seq#       Checksum Link count
+2.2.2.2         2.2.2.2         525         0x80000003 0x0007A8 1
+3.3.3.3         3.3.3.3         514         0x80000004 0x001574 2
+
+                Net Link States (Area 1)
+
+Link ID         ADV Router      Age         Seq#       Checksum
+10.23.23.1      2.2.2.2         525         0x80000001 0x00AA3F
+
+                Summary Net Link States (Area 1)
+
+Link ID         ADV Router      Age         Seq#       Checksum
+0.0.0.0         2.2.2.2         575         0x80000001 0x0075C0
+1.1.1.1         2.2.2.2         575         0x80000002 0x004FE0
+10.12.12.0      2.2.2.2         575         0x80000002 0x00C94C
+R3#show ip ospf 
+ Routing Process "ospf 1" with ID 3.3.3.3
+ Start time: 00:07:30.273, Time elapsed: 00:09:32.359
+ Supports only single TOS(TOS0) routes
+ Supports opaque LSA
+ Supports Link-local Signaling (LLS)
+ Supports area transit capability
+ Supports NSSA (compatible with RFC 3101)
+ Supports Database Exchange Summary List Optimization (RFC 5243)
+ Event-log enabled, Maximum number of events: 1000, Mode: cyclic
+ Router is not originating router-LSAs with maximum metric
+ Initial SPF schedule delay 5000 msecs
+ Minimum hold time between two consecutive SPFs 10000 msecs
+ Maximum wait time between two consecutive SPFs 10000 msecs
+ Incremental-SPF disabled
+ Minimum LSA interval 5 secs
+ Minimum LSA arrival 1000 msecs
+ LSA group pacing timer 240 secs
+ Interface flood pacing timer 33 msecs
+ Retransmission pacing timer 66 msecs
+ EXCHANGE/LOADING adjacency limit: initial 300, process maximum 300
+ Number of external LSA 0. Checksum Sum 0x000000
+ Number of opaque AS LSA 0. Checksum Sum 0x000000
+ Number of DCbitless external and opaque AS LSA 0
+ Number of DoNotAge external and opaque AS LSA 0
+ Number of areas in this router is 1. 0 normal 1 stub 0 nssa
+ Number of areas transit capable is 0
+ External flood list length 0
+ IETF NSF helper support enabled
+ Cisco NSF helper support enabled
+ Reference bandwidth unit is 100 mbps
+    Area 1
+        Number of interfaces in this area is 2 (1 loopback)
+        It is a stub area
+        Area has no authentication
+        SPF algorithm last executed 00:08:33.554 ago
+        SPF algorithm executed 5 times
+        Area ranges are
+        Number of LSA 6. Checksum Sum 0x025647
+        Number of opaque link LSA 0. Checksum Sum 0x000000
+        Number of DCbitless LSA 0
+        Number of indication LSA 0
+        Number of DoNotAge LSA 0
+        Flood list length 0
+          
+
+R3#show ip route ospf
+Gateway of last resort is 10.23.23.1 to network 0.0.0.0
+
+O*IA  0.0.0.0/0 [110/2] via 10.23.23.1, 00:09:00, GigabitEthernet0/1
+      1.0.0.0/32 is subnetted, 1 subnets
+O IA     1.1.1.1 [110/3] via 10.23.23.1, 00:09:00, GigabitEthernet0/1
+      10.0.0.0/8 is variably subnetted, 3 subnets, 2 masks
+O IA     10.12.12.0/30 [110/2] via 10.23.23.1, 00:09:00, GigabitEthernet0/1
+R3#ping 1.1.1.1 
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 1.1.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 8/10/14 ms
+R3#ping 3.3.3.3
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 3.3.3.3, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/4 ms
+----------------------------------------------------------------------------------------------------
