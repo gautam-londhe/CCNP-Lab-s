@@ -1,0 +1,339 @@
+R1
+router ospf 1
+
+network 10.12.12.0 0.0.0.3 area 0
+network 10.13.13.0 0.0.0.3 area 0
+network 1.1.1.1 0.0.0.0 area 0
+R2
+router ospf 1
+
+network 10.12.12.0 0.0.0.3 area 0
+network 10.23.23.0 0.0.0.3 area 0
+network 2.2.2.2 0.0.0.0 area 0
+R3
+router ospf 1
+
+network 10.13.13.0 0.0.0.3 area 0
+network 10.23.23.0 0.0.0.3 area 0
+network 3.3.3.3 0.0.0.0 area 0
+
+Verify:
+
+ping 2.2.2.2 source 1.1.1.1
+
+ping 3.3.3.3 source 1.1.1.1
+
+Must work before BGP.
+
+----------------------------------------------------------------------------------------------------
+
+Step 3: Configure iBGP
+R1
+router bgp 65001
+
+neighbor 2.2.2.2 remote-as 65001
+neighbor 2.2.2.2 update-source loopback0
+
+neighbor 3.3.3.3 remote-as 65001
+neighbor 3.3.3.3 update-source loopback0
+
+network 1.1.1.1 mask 255.255.255.255
+R2
+router bgp 65001
+
+neighbor 1.1.1.1 remote-as 65001
+neighbor 1.1.1.1 update-source loopback0
+
+neighbor 3.3.3.3 remote-as 65001
+neighbor 3.3.3.3 update-source loopback0
+
+network 2.2.2.2 mask 255.255.255.255
+R3
+router bgp 65001
+
+neighbor 1.1.1.1 remote-as 65001
+neighbor 1.1.1.1 update-source loopback0
+
+neighbor 2.2.2.2 remote-as 65001
+neighbor 2.2.2.2 update-source loopback0
+
+network 3.3.3.3 mask 255.255.255.255
+
+=========================================
+R1#show ip bgp summary 
+BGP router identifier 1.1.1.1, local AS number 65001
+BGP table version is 4, main routing table version 4
+3 network entries using 432 bytes of memory
+3 path entries using 252 bytes of memory
+2/2 BGP path/bestpath attribute entries using 320 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+BGP using 1004 total bytes of memory
+BGP activity 3/0 prefixes, 3/0 paths, scan interval 60 secs
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+2.2.2.2         4        65001       7       7        4    0    0 00:02:25        1
+3.3.3.3         4        65001       8       8        4    0    0 00:01:12        1
+=========================================
+R1#show ip bgp
+BGP table version is 4, local router ID is 1.1.1.1
+Status codes: s suppressed, d damped, h history, * valid, > best, i - internal, 
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter, 
+              x best-external, a additional-path, c RIB-compressed, 
+              t secondary path, 
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+
+     Network          Next Hop            Metric LocPrf Weight Path
+ *>   1.1.1.1/32       0.0.0.0                  0         32768 i
+ r>i  2.2.2.2/32       2.2.2.2                  0    100      0 i
+ r>i  3.3.3.3/32       3.3.3.3                  0    100      0 i
+
+=========================================
+R1#show ip bgp rib-failure 
+  Network            Next Hop                      RIB-failure   RIB-NH Matches
+2.2.2.2/32         2.2.2.2             Higher admin distance              n/a
+3.3.3.3/32         3.3.3.3             Higher admin distance              n/a
+
+=========================================
+R1#show ip bgp neighbors 
+BGP neighbor is 2.2.2.2,  remote AS 65001, internal link
+  BGP version 4, remote router ID 2.2.2.2
+  BGP state = Established, up for 00:04:12
+  Last read 00:00:24, last write 00:00:36, hold time is 180, keepalive interval is 60 seconds
+  Neighbor sessions:
+    1 active, is not multisession capable (disabled)
+  Neighbor capabilities:
+    Route refresh: advertised and received(new)
+    Four-octets ASN Capability: advertised and received
+    Address family IPv4 Unicast: advertised and received
+    Enhanced Refresh Capability: advertised and received
+    Multisession Capability: 
+    Stateful switchover support enabled: NO for session 1
+  Message statistics:
+    InQ depth is 0
+    OutQ depth is 0
+    
+                         Sent       Rcvd
+    Opens:                  1          1
+    Notifications:          0          0
+    Updates:                2          2
+    Keepalives:             6          6
+    Route Refresh:          0          0
+    Total:                  9          9
+  Do log neighbor state changes (via global configuration)
+  Default minimum time between advertisement runs is 0 seconds
+          
+ For address family: IPv4 Unicast
+  Session: 2.2.2.2
+  BGP table version 4, neighbor version 4/0
+  Output queue size : 0
+  Index 1, Advertise bit 0
+  1 update-group member
+  Slow-peer detection is disabled
+  Slow-peer split-update-group dynamic is disabled
+                                 Sent       Rcvd
+  Prefix activity:               ----       ----
+    Prefixes Current:               1          1 (Consumes 84 bytes)
+    Prefixes Total:                 2          1
+    Implicit Withdraw:              1          0
+    Explicit Withdraw:              0          0
+    Used as bestpath:             n/a          1
+    Used as multipath:            n/a          0
+    Used as secondary:            n/a          0
+          
+                                   Outbound    Inbound
+  Local Policy Denied Prefixes:    --------    -------
+    Bestpath from this peer:              2        n/a
+    Bestpath from iBGP peer:              1        n/a
+    Total:                                3          0
+  Number of NLRIs in the update sent: max 1, min 0
+  Last detected as dynamic slow peer: never
+  Dynamic slow peer recovered: never
+  Refresh Epoch: 1
+  Last Sent Refresh Start-of-rib: never
+  Last Sent Refresh End-of-rib: never
+  Last Received Refresh Start-of-rib: never
+  Last Received Refresh End-of-rib: never
+                                       Sent       Rcvd
+        Refresh activity:              ----       ----
+          Refresh Start-of-RIB          0          0
+          Refresh End-of-RIB            0          0
+          
+  Address tracking is enabled, the RIB does have a route to 2.2.2.2
+  Route to peer address reachability Up: 1; Down: 0
+    Last notification 00:05:53
+  Connections established 1; dropped 0
+  Last reset never
+  Interface associated: (none) (peering address NOT in same link)
+  Transport(tcp) path-mtu-discovery is enabled
+  Graceful-Restart is disabled
+  SSO is disabled
+Connection state is ESTAB, I/O status: 1, unread input bytes: 0            
+Connection is ECN Disabled, Mininum incoming TTL 0, Outgoing TTL 255
+Local host: 1.1.1.1, Local port: 18363
+Foreign host: 2.2.2.2, Foreign port: 179
+Connection tableid (VRF): 0
+Maximum output segment queue size: 50
+          
+Enqueued packets for retransmit: 0, input: 0  mis-ordered: 0 (0 bytes)
+          
+Event Timers (current time is 0x19833B):
+Timer          Starts    Wakeups            Next
+Retrans             8          0             0x0
+TimeWait            0          0             0x0
+AckHold             8          5             0x0
+SendWnd             0          0             0x0
+KeepAlive           0          0             0x0
+GiveUp              0          0             0x0
+PmtuAger            1          0        0x1ED15E
+DeadWait            0          0             0x0
+Linger              0          0             0x0
+ProcessQ            0          0             0x0
+          
+iss: 2240324675  snduna: 2240324926  sndnxt: 2240324926
+irs: 2853780514  rcvnxt: 2853780765
+          
+sndwnd:  16134  scale:      0  maxrcvwnd:  16384
+rcvwnd:  16134  scale:      0  delrcvwnd:    250
+          
+SRTT: 656 ms, RTTO: 2806 ms, RTV: 2150 ms, KRTT: 0 ms
+minRTT: 5 ms, maxRTT: 1000 ms, ACK hold: 200 ms
+uptime: 252320 ms, Sent idletime: 24513 ms, Receive idletime: 24713 ms 
+Status Flags: active open
+Option Flags: nagle, path mtu capable
+IP Precedence value : 6
+          
+Datagrams (max data segment is 1460 bytes):
+Rcvd: 16 (out of order: 0), with data: 9, total data bytes: 250
+Sent: 17 (retransmit: 0, fastretransmit: 0, partialack: 0, Second Congestion: 0), with data: 8, total data bytes: 250
+          
+ Packets received in fast path: 0, fast processed: 0, slow path: 0
+ fast lock acquisition failures: 0, slow path: 0
+TCP Semaphore      0x0D2B095C  FREE 
+          
+BGP neighbor is 3.3.3.3,  remote AS 65001, internal link
+  BGP version 4, remote router ID 3.3.3.3
+  BGP state = Established, up for 00:02:59
+  Last read 00:00:01, last write 00:00:21, hold time is 180, keepalive interval is 60 seconds
+  Neighbor sessions:
+    1 active, is not multisession capable (disabled)
+  Neighbor capabilities:
+    Route refresh: advertised and received(new)
+    Four-octets ASN Capability: advertised and received
+    Address family IPv4 Unicast: advertised and received
+    Enhanced Refresh Capability: advertised and received
+    Multisession Capability: 
+    Stateful switchover support enabled: NO for session 1
+  Message statistics:
+    InQ depth is 0
+    OutQ depth is 0
+          
+                         Sent       Rcvd
+    Opens:                  1          1
+    Notifications:          0          0
+    Updates:                2          2
+    Keepalives:             5          5
+    Route Refresh:          0          0
+    Total:                 10         10
+  Do log neighbor state changes (via global configuration)
+  Default minimum time between advertisement runs is 0 seconds
+          
+ For address family: IPv4 Unicast
+  Session: 3.3.3.3
+  BGP table version 4, neighbor version 4/0
+  Output queue size : 0
+  Index 1, Advertise bit 0
+  1 update-group member
+  Slow-peer detection is disabled
+  Slow-peer split-update-group dynamic is disabled
+                                 Sent       Rcvd
+  Prefix activity:               ----       ----
+    Prefixes Current:               1          1 (Consumes 84 bytes)
+    Prefixes Total:                 2          1
+    Implicit Withdraw:              1          0
+    Explicit Withdraw:              0          0
+    Used as bestpath:             n/a          1
+    Used as multipath:            n/a          0
+    Used as secondary:            n/a          0
+          
+                                   Outbound    Inbound
+  Local Policy Denied Prefixes:    --------    -------
+    Bestpath from this peer:              2        n/a
+    Bestpath from iBGP peer:              1        n/a
+    Total:                                3          0
+  Number of NLRIs in the update sent: max 1, min 0
+  Last detected as dynamic slow peer: never
+  Dynamic slow peer recovered: never
+  Refresh Epoch: 2
+  Last Sent Refresh Start-of-rib: 00:02:59
+  Last Sent Refresh End-of-rib: 00:02:59
+  Refresh-Out took 0 seconds
+  Last Received Refresh Start-of-rib: 00:02:59
+  Last Received Refresh End-of-rib: 00:02:59
+  Refresh-In took 0 seconds
+                                       Sent       Rcvd
+        Refresh activity:              ----       ----
+          Refresh Start-of-RIB          1          1
+          Refresh End-of-RIB            1          1
+          
+  Address tracking is enabled, the RIB does have a route to 3.3.3.3
+  Route to peer address reachability Up: 1; Down: 0
+    Last notification 00:05:26
+  Connections established 1; dropped 0
+  Last reset never
+  Interface associated: (none) (peering address NOT in same link)
+  Transport(tcp) path-mtu-discovery is enabled
+  Graceful-Restart is disabled
+  SSO is disabled
+Connection state is ESTAB, I/O status: 1, unread input bytes: 0            
+Connection is ECN Disabled, Mininum incoming TTL 0, Outgoing TTL 255
+Local host: 1.1.1.1, Local port: 38661
+Foreign host: 3.3.3.3, Foreign port: 179
+Connection tableid (VRF): 0
+Maximum output segment queue size: 50
+          
+Enqueued packets for retransmit: 0, input: 0  mis-ordered: 0 (0 bytes)
+          
+Event Timers (current time is 0x19833B):
+Timer          Starts    Wakeups            Next
+Retrans             8          0             0x0
+TimeWait            0          0             0x0
+AckHold             8          4             0x0
+SendWnd             0          0             0x0
+KeepAlive           0          0             0x0
+GiveUp              0          0             0x0
+PmtuAger            1          0        0x1FEDFE
+DeadWait            0          0             0x0
+Linger              0          0             0x0
+ProcessQ            0          0             0x0
+          
+iss: 3821768179  snduna: 3821768457  sndnxt: 3821768457
+irs:  930183810  rcvnxt:  930184088
+          
+sndwnd:  16107  scale:      0  maxrcvwnd:  16384
+rcvwnd:  16107  scale:      0  delrcvwnd:    277
+          
+SRTT: 656 ms, RTTO: 2806 ms, RTV: 2150 ms, KRTT: 0 ms
+minRTT: 4 ms, maxRTT: 1000 ms, ACK hold: 200 ms
+uptime: 179456 ms, Sent idletime: 991 ms, Receive idletime: 1192 ms 
+Status Flags: active open
+Option Flags: nagle, path mtu capable
+IP Precedence value : 6
+          
+Datagrams (max data segment is 1460 bytes):
+Rcvd: 16 (out of order: 0), with data: 9, total data bytes: 277
+Sent: 16 (retransmit: 0, fastretransmit: 0, partialack: 0, Second Congestion: 0), with data: 8, total data bytes: 277
+          
+ Packets received in fast path: 0, fast processed: 0, slow path: 0
+ fast lock acquisition failures: 0, slow path: 0
+TCP Semaphore      0x0D2B08EC  FREE 
+
+=========================================
+R1#ping 2.2.2.2 source 1.1.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 2.2.2.2, timeout is 2 seconds:
+Packet sent with a source address of 1.1.1.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/2/2 ms
+=========================================
