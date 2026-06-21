@@ -1,0 +1,137 @@
+R1 (Enterprise AS65001)
+hostname R1
+
+interface GigabitEthernet0/0
+ ip address 10.12.12.1 255.255.255.252
+ no shutdown
+
+!
+! Route to advertise
+!
+ip route 172.16.10.0 255.255.255.0 Null0
+
+!
+! Prefix Lists
+!
+ip prefix-list ISP-IN seq 10 permit 8.8.8.0/24
+
+ip prefix-list OUTBOUND seq 10 permit 172.16.10.0/24
+
+router bgp 65001
+
+ neighbor 10.12.12.2 remote-as 65002
+
+ !
+ ! Inbound Filtering
+ !
+ neighbor 10.12.12.2 prefix-list ISP-IN in
+
+ !
+ ! Outbound Filtering
+ !
+ neighbor 10.12.12.2 prefix-list OUTBOUND out
+
+ !
+ ! Store received routes
+ !
+ neighbor 10.12.12.2 soft-reconfiguration inbound
+
+ !
+ ! Advertise Enterprise Prefix
+ !
+ network 172.16.10.0 mask 255.255.255.0
+=========================================
+R2 (ISP AS65002)
+hostname R2
+
+interface GigabitEthernet0/0
+ ip address 10.12.12.2 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 8.8.8.8 255.255.255.0
+
+interface Loopback1
+ ip address 20.20.20.20 255.255.255.0
+
+interface Loopback2
+ ip address 30.30.30.30 255.255.255.0
+
+router bgp 65002
+
+ neighbor 10.12.12.1 remote-as 65001
+
+ network 8.8.8.0 mask 255.255.255.0
+
+ network 20.20.20.0 mask 255.255.255.0
+
+ network 30.30.30.0 mask 255.255.255.0
+=========================================
+
+R1#show ip bgp 
+
+     Network          Next Hop            Metric LocPrf Weight Path
+ *>   8.8.8.0/24       10.12.12.2               0             0 65002 i
+ *>   172.16.10.0/24   0.0.0.0                  0         32768 i
+
+
+=========================================
+
+R2#show ip bgp 
+BGP table version is 5, local router ID is 30.30.30.30
+Status codes: s suppressed, d damped, h history, * valid, > best, i - internal, 
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter, 
+              x best-external, a additional-path, c RIB-compressed, 
+              t secondary path, 
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+
+     Network          Next Hop            Metric LocPrf Weight Path
+ *>   8.8.8.0/24       0.0.0.0                  0         32768 i
+ *>   20.20.20.0/24    0.0.0.0                  0         32768 i
+ *>   30.30.30.0/24    0.0.0.0                  0         32768 i
+ *>   172.16.10.0/24   10.12.12.1               0             0 65001 i
+
+=========================================
+
+R1#show ip bgp neighbors 10.12.12.2 received-routes
+BGP table version is 7, local router ID is 10.12.12.1
+Status codes: s suppressed, d damped, h history, * valid, > best, i - internal, 
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter, 
+              x best-external, a additional-path, c RIB-compressed, 
+              t secondary path, 
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+
+     Network          Next Hop            Metric LocPrf Weight Path
+ *>   8.8.8.0/24       10.12.12.2               0             0 65002 i
+ *    20.20.20.0/24    10.12.12.2               0             0 65002 i
+ *    30.30.30.0/24    10.12.12.2               0             0 65002 i
+
+Total number of prefixes 3 
+
+=========================================
+
+R1#show ip bgp neighbors 10.12.12.2 advertised-routes
+BGP table version is 7, local router ID is 10.12.12.1
+Status codes: s suppressed, d damped, h history, * valid, > best, i - internal, 
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter, 
+              x best-external, a additional-path, c RIB-compressed, 
+              t secondary path, 
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+
+     Network          Next Hop            Metric LocPrf Weight Path
+ *>   172.16.10.0/24   0.0.0.0                  0         32768 i
+
+Total number of prefixes 1 
+=========================================
+
+R1#show ip route 172.16.10.0
+Routing entry for 172.16.10.0/24
+  Known via "static", distance 1, metric 0 (connected)
+  Advertised by bgp 65001
+  Routing Descriptor Blocks:
+  * directly connected, via Null0
+      Route metric is 0, traffic share count is 1
+=========================================
