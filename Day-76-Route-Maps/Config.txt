@@ -1,0 +1,211 @@
+
+
+ISP1 (AS65002)
+
+conf t
+
+hostname ISP1
+
+interface g0/0
+ip address 10.12.12.1 255.255.255.252
+no shutdown
+
+interface loopback0
+ip address 100.100.100.1 255.255.255.0
+
+interface loopback1
+ip address 101.101.101.1 255.255.255.0
+
+router bgp 65002
+neighbor 10.12.12.2 remote-as 65001
+
+network 100.100.100.0 mask 255.255.255.0
+network 101.101.101.0 mask 255.255.255.0
+
+end
+wr
+
+========================================
+
+====================
+R1 (AS65001)
+============
+
+conf t
+
+hostname R1
+
+interface g0/0
+ip address 10.12.12.2 255.255.255.252
+no shutdown
+
+interface g0/1
+ip address 10.13.13.1 255.255.255.252
+no shutdown
+
+ip prefix-list CLOUD seq 10 permit 100.100.100.0/24
+ip prefix-list CLOUD seq 20 permit 101.101.101.0/24
+
+route-map CLOUD-POLICY permit 10
+match ip address prefix-list CLOUD
+set local-preference 500
+
+router bgp 65001
+
+neighbor 10.12.12.1 remote-as 65002
+neighbor 10.13.13.2 remote-as 65001
+
+neighbor 10.12.12.1 route-map CLOUD-POLICY in
+
+end
+wr
+
+========================================
+
+====================
+R2 (AS65001)
+============
+
+conf t
+
+hostname R2
+
+interface g0/0
+ip address 10.13.13.2 255.255.255.252
+no shutdown
+
+interface g0/1
+ip address 10.23.23.2 255.255.255.252
+no shutdown
+
+router bgp 65001
+
+neighbor 10.13.13.1 remote-as 65001
+neighbor 10.23.23.1 remote-as 65003
+
+end
+wr
+
+========================================
+
+====================
+ISP2 (AS65003)
+==============
+
+conf t
+
+hostname ISP2
+
+interface g0/0
+ip address 10.23.23.1 255.255.255.252
+no shutdown
+
+interface loopback0
+ip address 200.200.200.1 255.255.255.0
+
+interface loopback1
+ip address 201.201.201.1 255.255.255.0
+
+router bgp 65003
+
+neighbor 10.23.23.2 remote-as 65001
+
+network 200.200.200.0 mask 255.255.255.0
+network 201.201.201.0 mask 255.255.255.0
+
+end
+wr
+
+========================================
+
+ROUTE MAP LOGIC
+
+ISP1 Routes:
+100.100.100.0/24
+101.101.101.0/24
+
+Prefix List:
+CLOUD
+
+Route Map:
+CLOUD-POLICY
+
+Action:
+Set Local Preference = 500
+
+Result:
+Enterprise prefers ISP1 routes over ISP2 routes.
+
+========================================
+
+Verification 
+
+
+ISP1#show ip bgp summary 
+BGP router identifier 1.1.1.1, local AS number 65002
+BGP table version is 3, main routing table version 3
+2 network entries using 288 bytes of memory
+2 path entries using 168 bytes of memory
+1/1 BGP path/bestpath attribute entries using 160 bytes of memory
+0 BGP route-map cache entries using 0 bytes of memory
+0 BGP filter-list cache entries using 0 bytes of memory
+BGP using 616 total bytes of memory
+BGP activity 4/2 prefixes, 4/2 paths, scan interval 60 secs
+
+Neighbor        V           AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+10.12.12.2      4        65001      82      86        3    0    0 01:12:02        0
+
+=========================================
+
+R1#show ip bgp         
+BGP table version is 5, local router ID is 2.2.2.2
+Status codes: s suppressed, d damped, h history, * valid, > best, i - internal, 
+              r RIB-failure, S Stale, m multipath, b backup-path, f RT-Filter, 
+              x best-external, a additional-path, c RIB-compressed, 
+              t secondary path, 
+Origin codes: i - IGP, e - EGP, ? - incomplete
+RPKI validation codes: V valid, I invalid, N Not found
+
+     Network          Next Hop            Metric LocPrf Weight Path
+ *>   100.100.100.0/24 10.12.12.1               0    500      0 65002 i
+ *>   101.101.101.0/24 10.12.12.1               0    500      0 65002 i
+ * i  200.200.200.0    10.23.23.1               0    100      0 65003 i
+ * i  201.201.201.0    10.23.23.1               0    100      0 65003 i
+
+=========================================
+R1#show ip bgp 100.100.100.0
+BGP routing table entry for 100.100.100.0/24, version 4
+Paths: (1 available, best #1, table default)
+  Advertised to update-groups:
+     2         
+  Refresh Epoch 2
+  65002
+    10.12.12.1 from 10.12.12.1 (1.1.1.1)
+      Origin IGP, metric 0, localpref 500, valid, external, best
+      rx pathid: 0, tx pathid: 0x0
+
+=========================================
+
+R1#show ip bgp 101.101.101.0
+BGP routing table entry for 101.101.101.0/24, version 5
+Paths: (1 available, best #1, table default)
+  Advertised to update-groups:
+     2         
+  Refresh Epoch 2
+  65002
+    10.12.12.1 from 10.12.12.1 (1.1.1.1)
+      Origin IGP, metric 0, localpref 500, valid, external, best
+      rx pathid: 0, tx pathid: 0x0
+
+=========================================
+
+R1#show route-map 
+route-map CLOUD-POLICY, permit, sequence 10
+  Match clauses:
+    ip address prefix-lists: CLOUD 
+  Set clauses:
+    local-preference 500
+  Policy routing matches: 0 packets, 0 bytes
+
+
+=========================================
