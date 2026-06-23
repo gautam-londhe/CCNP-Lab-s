@@ -1,0 +1,255 @@
+R1 Configuration
+hostname R1
+
+interface GigabitEthernet0/0
+ ip address 10.12.12.1 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 192.168.1.1 255.255.255.0
+
+router eigrp 100
+ network 10.12.12.0 0.0.0.3
+ network 192.168.1.0 0.0.0.255
+ no auto-summary
+R2 Configuration (Redistribution Router)
+hostname R2
+
+interface GigabitEthernet0/0
+ ip address 10.12.12.2 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ ip address 10.23.23.2 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 192.168.2.1 255.255.255.0
+
+router eigrp 100
+ network 10.12.12.0 0.0.0.3
+ network 192.168.2.0 0.0.0.255
+ no auto-summary
+
+ redistribute ospf 1 metric 100000 100 255 1 1500
+
+router ospf 1
+ router-id 2.2.2.2
+
+ network 10.23.23.0 0.0.0.3 area 0
+ network 192.168.2.0 0.0.0.255 area 0
+
+ redistribute eigrp 100 subnets
+R3 Configuration
+hostname R3
+
+interface GigabitEthernet0/0
+ ip address 10.23.23.3 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ ip address 10.34.34.3 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/2
+ ip address 10.35.35.3 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 192.168.3.1 255.255.255.0
+
+router ospf 1
+ router-id 3.3.3.3
+
+ network 10.23.23.0 0.0.0.3 area 0
+ network 10.34.34.0 0.0.0.3 area 0
+ network 10.35.35.0 0.0.0.3 area 0
+ network 192.168.3.0 0.0.0.255 area 0
+R4 Configuration
+hostname R4
+
+interface GigabitEthernet0/0
+ ip address 10.34.34.4 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 192.168.4.1 255.255.255.0
+
+router ospf 1
+ router-id 4.4.4.4
+
+ network 10.34.34.0 0.0.0.3 area 0
+ network 192.168.4.0 0.0.0.255 area 0
+R5 Configuration
+hostname R5
+
+interface GigabitEthernet0/0
+ ip address 10.35.35.5 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 192.168.5.1 255.255.255.0
+
+router ospf 1
+ router-id 5.5.5.5
+
+ network 10.35.35.0 0.0.0.3 area 0
+ network 192.168.5.0 0.0.0.255 area 0
+
+
+show ip eigrp neighbors
+
+show ip ospf neighbor
+
+show ip route
+
+show ip route eigrp
+
+show ip route ospf
+
+show ip protocols
+
+show ip ospf database external
+
+ping 192.168.4.1 source 192.168.1.1
+
+ping 192.168.5.1 source 192.168.1.1
+
+R2#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(100)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+0   10.12.12.1              Gi0/0                    14 00:09:32    7   100  0  4
+
+R2#show ip ospf neighbor 
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+3.3.3.3           1   FULL/BDR        00:00:32    10.23.23.2      GigabitEthernet0/1
+
+=========================================
+
+R3#show ip route
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 7 subnets, 2 masks
+O E2     10.12.12.0/30 [110/20] via 10.23.23.1, 00:05:45, GigabitEthernet0/1
+C        10.23.23.0/30 is directly connected, GigabitEthernet0/1
+L        10.23.23.2/32 is directly connected, GigabitEthernet0/1
+C        10.34.34.0/30 is directly connected, GigabitEthernet0/2
+L        10.34.34.1/32 is directly connected, GigabitEthernet0/2
+C        10.35.35.0/30 is directly connected, GigabitEthernet0/3
+L        10.35.35.1/32 is directly connected, GigabitEthernet0/3
+O E2  192.168.1.0/24 [110/20] via 10.23.23.1, 00:05:45, GigabitEthernet0/1
+      192.168.2.0/32 is subnetted, 1 subnets
+O        192.168.2.1 [110/2] via 10.23.23.1, 00:06:37, GigabitEthernet0/1
+      192.168.3.0/24 is variably subnetted, 2 subnets, 2 masks
+C        192.168.3.0/24 is directly connected, Loopback0
+L        192.168.3.1/32 is directly connected, Loopback0
+      192.168.4.0/32 is subnetted, 1 subnets
+O        192.168.4.1 [110/2] via 10.34.34.2, 00:06:07, GigabitEthernet0/2
+      192.168.5.0/32 is subnetted, 1 subnets
+O        192.168.5.1 [110/2] via 10.35.35.2, 00:06:07, GigabitEthernet0/3
+
+R1#show ip route
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+C        10.12.12.0/30 is directly connected, GigabitEthernet0/0
+L        10.12.12.1/32 is directly connected, GigabitEthernet0/0
+D EX     10.23.23.0/30 
+           [170/51456] via 10.12.12.2, 00:05:48, GigabitEthernet0/0
+D EX     10.34.34.0/30 
+           [170/51456] via 10.12.12.2, 00:05:48, GigabitEthernet0/0
+D EX     10.35.35.0/30 
+           [170/51456] via 10.12.12.2, 00:05:48, GigabitEthernet0/0
+      192.168.1.0/24 is variably subnetted, 2 subnets, 2 masks
+C        192.168.1.0/24 is directly connected, Loopback0
+L        192.168.1.1/32 is directly connected, Loopback0
+D     192.168.2.0/24 [90/130816] via 10.12.12.2, 00:11:06, GigabitEthernet0/0
+      192.168.3.0/32 is subnetted, 1 subnets
+D EX     192.168.3.1 [170/51456] via 10.12.12.2, 00:05:48, GigabitEthernet0/0
+      192.168.4.0/32 is subnetted, 1 subnets
+D EX     192.168.4.1 [170/51456] via 10.12.12.2, 00:05:48, GigabitEthernet0/0
+      192.168.5.0/32 is subnetted, 1 subnets
+D EX     192.168.5.1 [170/51456] via 10.12.12.2, 00:05:48, GigabitEthernet0/0
+
+=========================================
+
+R3#show ip protocols 
+*** IP Routing is NSF aware ***
+
+Routing Protocol is "application"
+  Sending updates every 0 seconds
+  Invalid after 0 seconds, hold down 0, flushed after 0
+  Outgoing update filter list for all interfaces is not set
+  Incoming update filter list for all interfaces is not set
+  Maximum path: 32
+  Routing for Networks:
+  Routing Information Sources:
+    Gateway         Distance      Last Update
+  Distance: (default is 4)
+
+Routing Protocol is "ospf 1"
+  Outgoing update filter list for all interfaces is not set
+  Incoming update filter list for all interfaces is not set
+  Router ID 3.3.3.3
+  Number of areas in this router is 1. 1 normal 0 stub 0 nssa
+  Maximum path: 4
+  Routing for Networks:
+    10.23.23.0 0.0.0.3 area 0
+    10.34.34.0 0.0.0.3 area 0
+    10.35.35.0 0.0.0.3 area 0
+    192.168.3.0 0.0.0.255 area 0
+  Routing Information Sources:
+    Gateway         Distance      Last Update
+    4.4.4.4              110      00:07:17
+    5.5.5.5              110      00:07:17
+    2.2.2.2              110      00:06:54
+  Distance: (default is 110)
+=========================================R3#show ip ospf database external 
+
+            OSPF Router with ID (3.3.3.3) (Process ID 1)
+
+                Type-5 AS External Link States
+
+  LS age: 463
+  Options: (No TOS-capability, DC, Upward)
+  LS Type: AS External Link
+  Link State ID: 10.12.12.0 (External Network Number )
+  Advertising Router: 2.2.2.2
+  LS Seq Number: 80000001
+  Checksum: 0x277
+  Length: 36
+  Network Mask: /30
+        Metric Type: 2 (Larger than any link state path)
+        MTID: 0 
+        Metric: 20 
+        Forward Address: 0.0.0.0
+        External Route Tag: 0
+
+  LS age: 463
+  Options: (No TOS-capability, DC, Upward)
+  LS Type: AS External Link
+  Link State ID: 192.168.1.0 (External Network Number )
+  Advertising Router: 2.2.2.2
+  LS Seq Number: 80000001
+  Checksum: 0xEE3F
+  Length: 36
+  Network Mask: /24
+        Metric Type: 2 (Larger than any link state path)
+        MTID: 0 
+        Metric: 20 
+        Forward Address: 0.0.0.0
+        External Route Tag: 0
+=========================================R1#ping 192.168.4.1 source 192.168.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.4.1, timeout is 2 seconds:
+Packet sent with a source address of 192.168.1.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 4/5/6 ms
+R1#ping 192.168.5.1 source 192.168.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.5.1, timeout is 2 seconds:
+Packet sent with a source address of 192.168.1.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/5/9 ms
