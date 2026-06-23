@@ -1,0 +1,215 @@
+=================================================
+R1 CONFIGURATION
+=================================================
+
+hostname R1
+
+interface GigabitEthernet0/0
+ ip address 10.14.14.1 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ ip address 10.12.12.1 255.255.255.252
+ no shutdown
+
+router ospf 1
+ network 10.12.12.0 0.0.0.3 area 0
+
+ip route 8.8.8.0 255.255.255.0 10.14.14.2
+
+end
+write memory
+
+
+=================================================
+R2 CONFIGURATION
+=================================================
+
+hostname R2
+
+interface GigabitEthernet0/0
+ ip address 10.12.12.2 255.255.255.252
+ no shutdown
+
+interface GigabitEthernet0/1
+ ip address 10.23.23.2 255.255.255.252
+ no shutdown
+
+interface Loopback10
+ ip address 192.168.10.1 255.255.255.0
+
+interface Loopback20
+ ip address 192.168.20.1 255.255.255.0
+
+router ospf 1
+ network 10.12.12.0 0.0.0.3 area 0
+ network 10.23.23.0 0.0.0.3 area 0
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+
+access-list 10 permit 192.168.10.0 0.0.0.255
+
+route-map ENGINEERING permit 10
+ match ip address 10
+ set ip next-hop 10.12.12.1
+
+interface GigabitEthernet0/0
+ ip policy route-map ENGINEERING
+
+end
+write memory
+
+
+=================================================
+R3 CONFIGURATION
+=================================================
+
+hostname R3
+
+interface GigabitEthernet0/0
+ ip address 10.23.23.3 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 172.16.1.1 255.255.255.0
+
+router ospf 1
+ network 10.23.23.0 0.0.0.3 area 0
+ network 172.16.1.0 0.0.0.255 area 0
+
+ip route 0.0.0.0 0.0.0.0 10.23.23.2
+
+end
+write memory
+
+
+=================================================
+R4 (ISP1) CONFIGURATION
+=================================================
+
+hostname ISP1
+
+interface GigabitEthernet0/0
+ ip address 10.14.14.2 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 8.8.8.8 255.255.255.0
+
+ip route 192.168.10.0 255.255.255.0 10.14.14.1
+ip route 192.168.20.0 255.255.255.0 10.14.14.1
+ip route 172.16.1.0 255.255.255.0 10.14.14.1
+
+end
+write memory
+
+
+=================================================
+R5 (ISP2) CONFIGURATION
+=================================================
+
+hostname ISP2
+
+interface GigabitEthernet0/0
+ ip address 10.35.35.5 255.255.255.252
+ no shutdown
+
+interface Loopback0
+ ip address 9.9.9.9 255.255.255.0
+
+ip route 192.168.10.0 255.255.255.0 10.35.35.1
+ip route 192.168.20.0 255.255.255.0 10.35.35.1
+ip route 172.16.1.0 255.255.255.0 10.35.35.1
+
+end
+write memory
+
+
+=================================================
+VERIFICATION COMMANDS
+=================================================
+
+show ip policy
+
+show route-map
+
+show access-lists
+
+show ip route
+
+show ip ospf neighbor
+
+show ip cef exact-route 192.168.10.1 8.8.8.8
+
+show running-config | section route-map
+
+show running-config | section policy
+
+ping 8.8.8.8 source 192.168.10.1
+
+ping 8.8.8.8 source 192.168.20.1
+
+=========================================
+R2#show ip policy
+Interface      Route map
+Gi0/1          ENGIN
+
+R2#show route-map 
+route-map ENGIN, permit, sequence 10
+  Match clauses:
+    ip address (access-lists): 10 
+  Set clauses:
+    ip next-hop 10.12.12.1
+  Policy routing matches: 0 packets, 0 bytes
+
+
+R2#show access-lists 
+Standard IP access list 10
+    10 permit 192.168.10.0, wildcard bits 0.0.0.255
+
+R2#show ip ospf neighbor 
+
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+172.16.1.1        1   FULL/BDR        00:00:36    10.23.23.1      GigabitEthernet0/2
+10.14.14.1        1   FULL/DR         00:00:31    10.12.12.1      GigabitEthernet0/1
+
+R2#show ip route 
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+       a - application route
+       + - replicated route, % - next hop override, p - overrides from PfR
+
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 4 subnets, 2 masks
+C        10.12.12.0/30 is directly connected, GigabitEthernet0/1
+L        10.12.12.2/32 is directly connected, GigabitEthernet0/1
+C        10.23.23.0/30 is directly connected, GigabitEthernet0/2
+L        10.23.23.2/32 is directly connected, GigabitEthernet0/2
+      172.16.0.0/32 is subnetted, 1 subnets
+O        172.16.1.1 [110/2] via 10.23.23.1, 01:55:00, GigabitEthernet0/2
+      192.168.10.0/24 is variably subnetted, 2 subnets, 2 masks
+C        192.168.10.0/24 is directly connected, Loopback10
+L        192.168.10.1/32 is directly connected, Loopback10
+      192.168.20.0/24 is variably subnetted, 2 subnets, 2 masks
+C        192.168.20.0/24 is directly connected, Loopback20
+L        192.168.20.1/32 is directly connected, Loopback20
+
+R2#show ip cef exact-route 192.168.10.1 8.8.8.8
+192.168.10.1 -> 8.8.8.8 =>no route to destination prefix
+
+R2#show running-config | section route-map
+ ip policy route-map ENGIN
+route-map ENGIN permit 10
+ match ip address 10
+ set ip next-hop 10.12.12.1
+
+R2#show running-config | section policy   
+ ip policy route-map ENGIN
+
+
