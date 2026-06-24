@@ -1,0 +1,244 @@
+# R1 Configuration
+
+hostname R1
+
+interface GigabitEthernet0/0
+ip address 10.12.12.1 255.255.255.252
+no shutdown
+
+interface Loopback0
+ip address 172.16.1.1 255.255.255.0
+
+router eigrp 100
+network 10.12.12.0 0.0.0.3
+network 172.16.1.0 0.0.0.255
+no auto-summary
+
+---
+
+# R2 Configuration
+
+hostname R2
+
+interface GigabitEthernet0/0
+ip address 10.12.12.2 255.255.255.252
+no shutdown
+
+interface GigabitEthernet0/1
+ip address 10.23.23.2 255.255.255.252
+no shutdown
+
+interface Loopback0
+ip address 172.16.2.1 255.255.255.0
+
+router eigrp 100
+network 10.12.12.0 0.0.0.3
+network 10.23.23.0 0.0.0.3
+network 172.16.2.0 0.0.0.255
+no auto-summary
+
+---
+
+# R3 Configuration
+
+hostname R3
+
+interface GigabitEthernet0/0
+ip address 10.23.23.3 255.255.255.252
+no shutdown
+
+interface GigabitEthernet0/1
+ip address 10.34.34.3 255.255.255.252
+no shutdown
+
+interface GigabitEthernet0/2
+ip address 10.35.35.3 255.255.255.252
+no shutdown
+
+interface Loopback0
+ip address 172.16.3.1 255.255.255.0
+
+router eigrp 100
+network 10.23.23.0 0.0.0.3
+network 172.16.3.0 0.0.0.255
+no auto-summary
+
+router ospf 1
+router-id 3.3.3.3
+network 10.34.34.0 0.0.0.3 area 0
+network 10.35.35.0 0.0.0.3 area 0
+network 172.16.3.0 0.0.0.255 area 0
+
+route-map EIGRP-INTO-OSPF permit 10
+set tag 100
+
+route-map OSPF-INTO-EIGRP deny 10
+match tag 100
+
+route-map OSPF-INTO-EIGRP permit 20
+
+router ospf 1
+redistribute eigrp 100 subnets route-map EIGRP-INTO-OSPF
+
+router eigrp 100
+redistribute ospf 1 metric 100000 100 255 1 1500 route-map OSPF-INTO-EIGRP
+
+---
+
+# R4 Configuration
+
+hostname R4
+
+interface GigabitEthernet0/0
+ip address 10.34.34.4 255.255.255.252
+no shutdown
+
+interface Loopback0
+ip address 192.168.4.1 255.255.255.0
+
+router ospf 1
+router-id 4.4.4.4
+network 10.34.34.0 0.0.0.3 area 0
+network 192.168.4.0 0.0.0.255 area 0
+
+---
+
+# R5 Configuration
+
+hostname R5
+
+interface GigabitEthernet0/0
+ip address 10.35.35.5 255.255.255.252
+no shutdown
+
+interface Loopback0
+ip address 192.168.5.1 255.255.255.0
+
+router ospf 1
+router-id 5.5.5.5
+network 10.35.35.0 0.0.0.3 area 0
+network 192.168.5.0 0.0.0.255 area 0
+
+=========================================R2#show ip eigrp neighbors 
+EIGRP-IPv4 Neighbors for AS(100)
+H   Address                 Interface              Hold Uptime   SRTT   RTO  Q  Seq
+                                                   (sec)         (ms)       Cnt Num
+1   10.12.12.1              Gi0/0                    13 00:16:05  442  2652  0  4
+0   10.23.23.2              Gi0/1                    10 00:16:15  222  1332  0  5
+=========================================R1#show ip route
+
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+C        10.12.12.0/30 is directly connected, GigabitEthernet0/0
+L        10.12.12.1/32 is directly connected, GigabitEthernet0/0
+D        10.23.23.0/30 [90/3072] via 10.12.12.2, 00:16:33, GigabitEthernet0/0
+D EX     10.34.34.0/30 
+           [170/51712] via 10.12.12.2, 00:16:33, GigabitEthernet0/0
+D EX     10.35.35.0/30 
+           [170/51712] via 10.12.12.2, 00:16:33, GigabitEthernet0/0
+      172.16.0.0/16 is variably subnetted, 4 subnets, 2 masks
+C        172.16.1.0/24 is directly connected, Loopback0
+L        172.16.1.1/32 is directly connected, Loopback0
+D        172.16.2.0/24 
+           [90/130816] via 10.12.12.2, 00:16:33, GigabitEthernet0/0
+D        172.16.3.0/24 
+           [90/131072] via 10.12.12.2, 00:16:33, GigabitEthernet0/0
+      192.168.5.0/32 is subnetted, 1 subnets
+D EX     192.168.5.1 [170/51712] via 10.12.12.2, 00:15:19, GigabitEthernet0/0
+=========================================
+R3#show ip route ospf
+
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 5 subnets, 2 masks
+O E2     10.12.12.0/30 [110/20] via 10.34.34.1, 00:13:10, GigabitEthernet0/2
+O E2     10.23.23.0/30 [110/20] via 10.34.34.1, 00:13:10, GigabitEthernet0/2
+O        10.35.35.0/30 [110/2] via 10.34.34.1, 00:16:29, GigabitEthernet0/2
+      172.16.0.0/16 is variably subnetted, 5 subnets, 2 masks
+O E2     172.16.1.0/24 [110/20] via 10.34.34.1, 00:13:10, GigabitEthernet0/2
+O E2     172.16.2.0/24 [110/20] via 10.34.34.1, 00:13:10, GigabitEthernet0/2
+O        172.16.3.1/32 [110/2] via 10.34.34.1, 00:16:39, GigabitEthernet0/2
+      192.168.5.0/32 is subnetted, 1 subnets
+O        192.168.5.1 [110/3] via 10.34.34.1, 00:16:18, GigabitEthernet0/2
+
+=========================================
+R4#show ip ospf database external 
+
+            OSPF Router with ID (4.4.4.4) (Process ID 1)
+
+                Type-5 AS External Link States
+
+  LS age: 1163
+  Options: (No TOS-capability, DC, Upward)
+  LS Type: AS External Link
+  Link State ID: 10.12.12.0 (External Network Number )
+  Advertising Router: 3.3.3.3
+  LS Seq Number: 80000002
+  Checksum: 0xF01F
+  Length: 36
+  Network Mask: /30
+        Metric Type: 2 (Larger than any link state path)
+        MTID: 0 
+        Metric: 20 
+        Forward Address: 0.0.0.0
+        External Route Tag: 100
+
+  LS age: 1163
+  Options: (No TOS-capability, DC, Upward)
+  LS Type: AS External Link
+  Link State ID: 10.23.23.0 (External Network Number )
+  Advertising Router: 3.3.3.3
+  LS Seq Number: 80000002
+  Checksum: 0xF207
+  Length: 36
+  Network Mask: /30
+        Metric Type: 2 (Larger than any link state path)
+        MTID: 0 
+        Metric: 20 
+        Forward Address: 0.0.0.0
+        External Route Tag: 100
+          
+  LS age: 1163
+  Options: (No TOS-capability, DC, Upward)
+  LS Type: AS External Link
+  Link State ID: 172.16.1.0 (External Network Number )
+  Advertising Router: 3.3.3.3
+  LS Seq Number: 80000002
+  Checksum: 0xA67
+  Length: 36
+  Network Mask: /24
+        Metric Type: 2 (Larger than any link state path)
+        MTID: 0 
+        Metric: 20 
+        Forward Address: 0.0.0.0
+        External Route Tag: 100
+          
+  LS age: 1163
+  Options: (No TOS-capability, DC, Upward)
+  LS Type: AS External Link
+  Link State ID: 172.16.2.0 (External Network Number )
+  Advertising Router: 3.3.3.3
+  LS Seq Number: 80000002
+  Checksum: 0xFE71
+  Length: 36
+  Network Mask: /24
+        Metric Type: 2 (Larger than any link state path)
+        MTID: 0 
+        Metric: 20 
+        Forward Address: 0.0.0.0
+        External Route Tag: 100=========================================
+R1#ping 192.168.4.1 source 172.16.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.4.1, timeout is 2 seconds:
+Packet sent with a source address of 172.16.1.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/5/8 ms
+
+R1#ping 192.168.5.1 source 172.16.1.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.5.1, timeout is 2 seconds:
+Packet sent with a source address of 172.16.1.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/6/9 ms
+
