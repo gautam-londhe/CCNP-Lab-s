@@ -1,0 +1,126 @@
+=========================================
+R1
+=========================================
+
+interface g0/0
+ ip address 192.168.10.2 255.255.255.0
+ no shutdown
+ standby 10 ip 192.168.10.1
+ standby 10 priority 120
+ standby 10 preempt
+
+=========================================
+R2
+=========================================
+
+interface g0/1
+ ip address 192.168.10.3 255.255.255.0
+ no shutdown
+ standby 10 ip 192.168.10.1
+ standby 10 priority 100
+ standby 10 preempt
+
+=========================================
+PC0
+=========================================
+
+IP Address : 192.168.10.10
+Subnet Mask: 255.255.255.0
+Gateway    : 192.168.10.1
+
+=========================================
+PC1
+=========================================
+
+IP Address : 192.168.10.20
+Subnet Mask: 255.255.255.0
+Gateway    : 192.168.10.1
+
+=========================================
+Verification
+=========================================
+R1#show standby brief 
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Gig0/0      10   120 P Active   local           192.168.10.3    192.168.10.1   
+
+=========================================R2#show standby brief 
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Gig0/1      10   100 P Standby  192.168.10.2    local           192.168.10.1 
+=========================================
+C:\>ping 192.168.10.1
+
+Pinging 192.168.10.1 with 32 bytes of data:
+
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time=8ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 8ms, Average = 2ms
+
+C:\>ping 192.168.10.2
+
+Pinging 192.168.10.2 with 32 bytes of data:
+
+Reply from 192.168.10.2: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.2: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.2: bytes=32 time=1ms TTL=255
+Reply from 192.168.10.2: bytes=32 time=1ms TTL=255
+
+Ping statistics for 192.168.10.2:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+
+C:\>ping 192.168.10.3
+
+Pinging 192.168.10.3 with 32 bytes of data:
+
+Reply from 192.168.10.3: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.3: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.3: bytes=32 time=1ms TTL=255
+Reply from 192.168.10.3: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.3:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+
+=========================================
+R1(config)#int g0/0
+R1(config-if)#shut
+
+R1(config-if)#
+ %HSRP-6-STATECHANGE: GigabitEthernet0/0 Grp 10 state Active -> Init
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0, changed state to administratively down
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0, changed state to down
+=========================================
+
+R2#show standby brief 
+                     P indicates configured to preempt.
+                     |
+Interface   Grp  Pri P State    Active          Standby         Virtual IP
+Gig0/1      10   100 P Active   local           unknown         192.168.10.1   
+=========================================C:\>ping 192.168.10.1
+
+Pinging 192.168.10.1 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.1:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+=========================================
